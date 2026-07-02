@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Lakehouse Analytics Portal</title>
+    <meta name="description" content="Production-grade medallion architecture database analytics portal showing real-time E-commerce KPIs and metrics.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: rgba(17, 24, 39, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            --primary: #6366f1;
+            --primary-gradient: linear-gradient(135deg, #6366f1, #a855f7);
+            --emerald: #10b981;
+            --rose: #f43f5e;
+            --violet: #8b5cf6;
+            --amber: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.12) 0px, transparent 50%);
+            color: var(--text-color);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.5;
+        }
+
+        /* Layout */
+        .wrapper {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 1.5rem;
+        }
+
+        .logo-section h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-section p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 0.2rem;
+        }
+
+        .badge {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            padding: 0.4rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .badge:hover {
+            background: rgba(99, 102, 241, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .badge-pulse {
+            width: 8px;
+            height: 8px;
+            background-color: var(--emerald);
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: pulse 1.6s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        /* KPI Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .kpi-card {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary-gradient);
+            opacity: 0.8;
+        }
+
+        .kpi-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .kpi-meta.positive {
+            color: var(--emerald);
+        }
+
+        /* Main Dashboard Content */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .chart-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-panel.col-8 {
+            grid-column: span 8;
+        }
+
+        .chart-panel.col-4 {
+            grid-column: span 4;
+        }
+
+        .chart-panel.col-12 {
+            grid-column: span 12;
+        }
+
+        @media (max-width: 1024px) {
+            .chart-panel.col-8, .chart-panel.col-4 {
+                grid-column: span 12;
+            }
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .panel-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.1rem;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 320px;
+        }
+
+        /* Tabs and Explorer */
+        .explorer-section {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .tab-bar {
+            display: flex;
+            gap: 1rem;
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-color);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            color: var(--text-color);
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        th {
+            padding: 1rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            border-bottom: 1px solid var(--panel-border);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--panel-border);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--violet);
+            object-fit: cover;
+            border: 1px solid var(--panel-border);
+        }
+
+        .role-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .role-badge.admin {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--amber);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        /* Loading States */
+        .loading-overlay {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            min-height: 200px;
+            color: var(--text-muted);
+            font-weight: 600;
+            gap: 0.8rem;
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s infinite linear;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        <header>
+            <div class="logo-section">
+                <h1>Lakehouse Analytics Portal</h1>
+                <p>Medallion Architecture Database Engine Pipeline Dashboard</p>
+            </div>
+            <div class="badge" id="refresh-btn">
+                <div class="badge-pulse"></div>
+                Live Database Active
+            </div>
+        </header>
+
+        <!-- KPI Summary row -->
+        <div class="kpi-grid">
+            <div class="kpi-card" id="kpi-revenue">
+                <div class="kpi-title">Total Revenue</div>
+                <div class="kpi-value">$0.00</div>
+                <div class="kpi-meta positive">
+                    📈 Simulated Sales Active
+                </div>
+            </div>
+            <div class="kpi-card" id="kpi-orders">
+                <div class="kpi-title">Total Orders</div>
+                <div class="kpi-value">0</div>
+                <div class="kpi-meta">Generated past 30 days</div>
+            </div>
+            <div class="kpi-card" id="kpi-aov">
+                <div class="kpi-title">Average Order Value</div>
+                <div class="kpi-value">$0.00</div>
+                <div class="kpi-meta">Basket average</div>
+            </div>
+            <div class="kpi-card" id="kpi-products">
+                <div class="kpi-title">Active Products</div>
+                <div class="kpi-value">0</div>
+                <div class="kpi-meta">From escuelajs.co API</div>
+            </div>
+        </div>
+
+        <!-- Main Analytics Chart Area -->
+        <div class="chart-grid">
+            <div class="chart-panel col-8">
+                <div class="panel-header">
+                    <div>
+                        <h2 class="panel-title">Revenue & Sales by Category</h2>
+                        <p class="panel-subtitle">Categorized transaction performance from Gold layer</p>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-panel col-4">
+                <div class="panel-header">
+                    <div>
+                        <h2 class="panel-title">Price Segmentation</h2>
+                        <p class="panel-subtitle">Distribution of catalog prices</p>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="priceSegmentChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-panel col-12">
+                <div class="panel-header">
+                    <div>
+                        <h2 class="panel-title">Top 10 Customers (Spend Leaderboard)</h2>
+                        <p class="panel-subtitle">High-value purchaser accounts in gold.kpi_user_sales_performance</p>
+                    </div>
+                </div>
+                <div class="chart-container" style="height: 350px;">
+                    <canvas id="customerChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Database Tables Explorer -->
+        <div class="explorer-section">
+            <div class="panel-header">
+                <div>
+                    <h2 class="panel-title">Database Gold Layer Explorer</h2>
+                    <p class="panel-subtitle">Direct records inside PostgreSQL aggregate KPI tables</p>
+                </div>
+            </div>
+            <div class="tab-bar">
+                <button class="tab-btn active" onclick="switchTab('categories')">Category Performance</button>
+                <button class="tab-btn" onclick="switchTab('segments')">Price Segmentation</button>
+                <button class="tab-btn" onclick="switchTab('customers')">Customer Sales Performance</button>
+            </div>
+            <div class="table-container">
+                <div id="loading-table" class="loading-overlay">
+                    <div class="spinner"></div>
+                    Retrieving database records...
+                </div>
+                <table id="explorer-table" style="display: none;">
+                    <thead id="table-head"></thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
