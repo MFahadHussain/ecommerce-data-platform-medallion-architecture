@@ -1,0 +1,13 @@
+-- DDL for Bronze Layer (Raw Ingestion)
+
+CREATE TABLE IF NOT EXISTS bronze.raw_products (
+    id SERIAL PRIMARY KEY,
+    raw_data JSONB NOT NULL,
+    ingested_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS bronze.raw_users (
+    id SERIAL PRIMARY KEY,
+    raw_data JSONB NOT NULL,
+    ingested_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
