@@ -113,3 +113,4 @@ Categorizes catalog distribution and generated revenue based on product price ti
 | Mid-Range     | 41            | 63.12             | 404,404.00        |
 | Premium       | 7             | 819.64            | 1,064,556.00      |
 # ecommerce-data-platform-medallion-architecture
+# ecommerce-data-platform-medallion-architecture
